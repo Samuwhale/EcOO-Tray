@@ -1,6 +1,9 @@
+#include <FastLED.h>
+
 #include <PN532_I2C.h>
 #include <grove_two_rgb_led_matrix.h>
 #include <FastLED.h>
+
 
 
 #ifdef ARDUINO_SAMD_VARIANT_COMPLIANCE
@@ -11,7 +14,7 @@
 
 
 void setup() {
-    setupMatrix();
+
     setupNFC();
 
 
@@ -19,7 +22,6 @@ void setup() {
 
 void loop() {
   readNFC();
-  emojiTimer();
 
 
 }
@@ -46,49 +48,28 @@ void readNFC() {
     }
 }
 
-// LED MATRIX
-// DOCS: https://wiki.seeedstudio.com/Grove-RGB_LED_Matrix_w-Driver/ 
+
+// LED MATRIX 
+// 
 
 
-#define DISPLAY_COLOR    0X11
+// LED STRIP
+// port 7 
 
-const int displayDuration = 5000; // milliseconds
-const int displayInterval = 5000; // milliseconds
-int displayTimer = 0;
 
-void waitForMatrixReady() {
-    delay(1000);
-}
+// LCD scherm
+/* 
+ * The circuit:
+ * LCD RS pin to digital pin 12
+ * LCD Enable pin to digital pin 11
+ * LCD D4 pin to digital pin 5
+ * LCD D5 pin to digital pin 4
+ * LCD D6 pin to digital pin 3
+ * LCD D7 pin to digital pin 2
+ * 10K resistor:
+ * ends to +5V and ground
+ * wiper to LCD VO pin (pin 3)
+ */
 
-GroveTwoRGBLedMatrixClass matrix;
-int currentDisplayIndex = 0;
 
-void displayNextEmoji() {
-    matrix.displayEmoji(currentDisplayIndex, displayDuration, true);
-    currentDisplayIndex++;
-    if (currentDisplayIndex >= 35) {
-        currentDisplayIndex = 0;
-    }
-}
-
-void emojiTimer() {
-  displayTimer = displayTimer + millis();
-  if (displayTimer > displayInterval) {
-    displayTimer = 0;
-    displayNextEmoji();
-  }
-}
-
-void setupMatrix() {
-    Wire.begin();
-    SERIAL.begin(115200);
-    waitForMatrixReady();
-    uint16_t VID = 0;
-    VID = matrix.getDeviceVID();
-    if (VID != 0x2886) {
-        SERIAL.println("Can not detect led matrix!!!");
-        while (1);
-    }
-    SERIAL.println("Matrix init success!!!");
-}
 
