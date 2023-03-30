@@ -1,6 +1,15 @@
+#include <LiquidCrystal.h>
+
+
+
 
 #include <grove_two_rgb_led_matrix.h>
 #include <FastLED.h>
+
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include "Adafruit_LEDBackpack.h"
+
 
 
 
@@ -14,12 +23,15 @@
 void setup() {
 
   // setupNFC();
+  delay(2000);
   setupLeds();
+  setupLcd();
+  setupMatrix();
 }
 
 void loop() {
   // readNFC();
-
+  updateMatrix();
 }
 
 
@@ -48,6 +60,37 @@ void loop() {
 // LED MATRIX
 //
 
+#ifndef _BV
+  #define _BV(bit) (1<<(bit))
+#endif
+
+
+Adafruit_LEDBackpack matrix = Adafruit_LEDBackpack();
+
+uint8_t counter = 0;
+
+void setupMatrix() {
+  Serial.begin(9600);
+  Serial.println("HT16K33 test");
+  
+  matrix.begin(0x70);  // pass in the address
+}
+
+void updateMatrix(){
+    // paint one LED per row. The HT16K33 internal memory looks like
+  // a 8x16 bit matrix (8 rows, 16 columns)
+  for (uint8_t i=0; i<8; i++) {
+    // draw a diagonal row of pixels
+    matrix.displaybuffer[i] = _BV((counter+i) % 16) | _BV((counter+i+8) % 16)  ;
+  }
+  // write the changes we just made to the display
+  matrix.writeDisplay();
+  delay(100);
+
+  counter++;
+  if (counter >= 16) counter = 0;  
+}
+
 
 // LED STRIP
 // port 7
@@ -60,7 +103,6 @@ void loop() {
 CRGB leds[NUM_LEDS];
 
 void setupLeds() {
-  delay(2000);
   FastLED.addLeds<LED_TYPE, LED_DATA_PIN, RGB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(LED_BRIGHTNESS);
   fiveColorStrip();
@@ -69,11 +111,11 @@ void setupLeds() {
 void fiveColorStrip() {
   int segmentSize = NUM_LEDS / 5;
   int currentColorIndex = 0;
-  for(int i = 0; i < NUM_LEDS; i = i+1) {
+  for (int i = 0; i <= NUM_LEDS; i = i + 1) {
     if (i % segmentSize == 0) {
       currentColorIndex++;
     }
-    switch(currentColorIndex) {
+    switch (currentColorIndex) {
       case 1:
         leds[i] = CRGB::Red;
         break;
@@ -110,3 +152,13 @@ void fiveColorStrip() {
  * ends to +5V and ground
  * wiper to LCD VO pin (pin 3)
  */
+
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+
+ void setupLcd() { 
+   lcd.begin(16, 2);
+   lcd.print("hello!");
+ }
+
