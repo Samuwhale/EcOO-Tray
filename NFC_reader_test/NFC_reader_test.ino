@@ -1,13 +1,13 @@
 #include <SoftwareSerial.h>
 #include <PN532_SWHSU.h>
 #include <PN532.h>
-SoftwareSerial SWSerial( 6, 7 ); // RX, TX
+SoftwareSerial SWSerial( 7, 6 ); // RX, TX
  
 PN532_SWHSU pn532swhsu( SWSerial );
 PN532 nfc( pn532swhsu );
 String tagId = "None", dispTag = "None";
 byte nuidPICC[4];
- 
+
 void setup(void)
 {
   Serial.begin(115200);
@@ -31,8 +31,7 @@ void setup(void)
   nfc.SAMConfig();
   //Serial.println("Waiting for an ISO14443A Card ...");
 }
- 
- 
+
 void loop()
 {
   readNFC();
@@ -62,7 +61,7 @@ void readNFC()
     Serial.print(F("tagId is : "));
     Serial.println(tagId);
     Serial.println("");
-    delay(1000);  // 1 second halt
+    delay(99);  // 1 second halt
   }
   else
   {
@@ -70,6 +69,7 @@ void readNFC()
     Serial.println("Timed out! Waiting for a card...");
   }
 }
+
 String tagToString(byte id[4])
 {
   String tagId = "";
@@ -79,5 +79,4 @@ String tagToString(byte id[4])
     else tagId += String(id[i]);
   }
   return tagId;
-} 
-
+}

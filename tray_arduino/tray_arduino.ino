@@ -63,9 +63,8 @@ void loop() {
 
 
 // LED MATRIX
-#ifndef _BV
-#define _BV(bit) (1 << (bit))
-#endif
+
+
 
 const uint8_t smile_bmp[] PROGMEM = { B00111100,
                                       B01000010,
