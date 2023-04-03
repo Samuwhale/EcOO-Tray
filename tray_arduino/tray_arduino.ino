@@ -51,7 +51,7 @@ void loop() {
   #define _BV(bit) (1<<(bit))
 #endif
 
-
+// hoi
 
 
 static const uint8_t PROGMEM smile_bmp[] =
