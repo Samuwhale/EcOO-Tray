@@ -41,27 +41,9 @@ void loop() {
   updateMatrix();
 }
 
-
 // RFID / NFC
 // DOCS: https://how2electronics.com/interfacing-pn532-nfc-rfid-module-with-arduino/
-// PN532_I2C pn532_i2c(Wire);
-// NfcAdapter nfc = NfcAdapter(pn532_i2c);
-// String tagId = "None";
-// byte nuidPICC[4];
 
-// void setupNFC() {
-//   SERIAL.begin(115200);
-//   SERIAL.println("System initialized");
-//   nfc.begin();
-// }
-
-// void readNFC() {
-//   if (nfc.tagPresent()) {
-//     NfcTag tag = nfc.read();
-//     tag.print();
-//     tagId = tag.getUidString();
-//   }
-// }
 
 
 // LED MATRIX
@@ -147,7 +129,7 @@ CRGB leds[NUM_LEDS];
 void setupLeds() {
   FastLED.addLeds<LED_TYPE, LED_DATA_PIN, RGB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(LED_BRIGHTNESS);
-  updateLeds()
+  updateLeds();
 }
 
 void updateLeds() {
@@ -183,8 +165,6 @@ void updateLeds() {
   FastLED.show();
 }
 
-
-
 // LCD scherm
 /* 
  * The circuit:
@@ -202,7 +182,7 @@ void updateLeds() {
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-void showTextOnLcd(string textToDisplay) {
+void showTextOnLcd(String textToDisplay) {
       lcd.clear();
       lcd.begin(16, 2);
       lcd.print(textToDisplay);
