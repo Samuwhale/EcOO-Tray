@@ -52,37 +52,40 @@ void loop() {
 #endif
 
 
-// Als het niet werkt: Adafruit_LEDBackpack matrix = Adafruit_LEDBackpack();
-Adafruit_8x8matrix matrix = Adafruit_8x8matrix();
 
 
 static const uint8_t PROGMEM smile_bmp[] =
   { B00111100,
-    B01000010,
-    B10100101,
-    B10000001,
-    B10100101,
-    B10011001,
-    B01000010,
-    B00111100 },
+  B01000010,
+  B10100101,
+  B10000001,
+  B10100101,
+  B10011001,
+  B01000010,
+  B00111100 },
   neutral_bmp[] =
   { B00111100,
-    B01000010,
-    B10100101,
-    B10000001,
-    B10111101,
-    B10000001,
-    B01000010,
-    B00111100 },
+  B01000010,
+  B10100101,
+  B10000001,
+  B10111101,
+  B10000001,
+  B01000010,
+  B00111100 },
   frown_bmp[] =
   { B00111100,
-    B01000010,
-    B10100101,
-    B10000001,
-    B10011001,
-    B10100101,
-    B01000010,
-    B00111100 };
+  B01000010,
+  B10100101,
+  B10000001,
+  B10011001,
+  B10100101,
+  B01000010,
+  B00111100 };
+
+// Als het niet werkt: 
+Adafruit_LEDBackpack matrix = Adafruit_LEDBackpack();
+
+uint8_t counter = 0;
 
 void setupMatrix() {
   Serial.begin(9600);  
@@ -92,27 +95,24 @@ void setupMatrix() {
 unsigned long currentTime;
 int bitmapIndex = 0;
 unsigned long lastBmpTime = 0;
-int msToWait = 500;
+int msToWait = 1000;
 
 void updateMatrix(){
   currentTime = millis();
 
   if (currentTime - lastBmpTime > msToWait) {
     lastBmpTime = currentTime;
-    matrix.clear();
-    switch (bitmapIndex) {
-    case 0:
-      matrix.drawBitmap(0, 0, smile_bmp, 8, 8, LED_ON);
-      break;
-    case 1:
-      matrix.drawBitmap(0, 0, neutral_bmp, 8, 8, LED_ON);
-      break;
-    case 2:
-      matrix.drawBitmap(0, 0, frown_bmp, 8, 8, LED_ON);
-      break;
-    }
-    matrix.writeDisplay();
+  // paint one LED per row. The HT16K33 internal memory looks like
+  // a 8x16 bit matrix (8 rows, 16 columns)
+  for (uint8_t i=0; i<8; i++) {
+    // draw a diagonal row of pixels
+    matrix.displaybuffer[i] = _BV((counter+i) % 16) | _BV((counter+i+8) % 16)  ;
   }
+  // write the changes we just made to the display
+  matrix.writeDisplay();
+  counter++;
+  if (counter >= 16) counter = 0;  }
+
 }
 
 
