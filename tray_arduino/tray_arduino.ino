@@ -16,7 +16,7 @@
 #define SERIAL Serial
 #endif
 
-int streakAmount = 5;
+int streakAmount = 3;
 
 // Sets streak and updates LEDS accordingly
 void setStreak(int streak) {
@@ -25,20 +25,36 @@ void setStreak(int streak) {
 }
 
 // meatscore gaat van  0 (slecht) - 1 (best)
-float meatScore = 0.5f;
+float meatScore = 0.7f;
+
+String userName = "Tim";
+
+void setUsername(String name) {
+  userName = name;
+  updateLcd();
+}
+
+void setMeatscore(float score) {
+  meatScore = score;
+  updateMatrix();
+  updateLcd();
+}
 
 void setup() {
-
   // setupNFC();
   delay(1000);
   setupLeds();
   setupLcd();
   setupMatrix();
+
+  setStreak(3);
+  setMeatscore(0.3);
+  // updateLcd();
+  updateLeds();
 }
 
 void loop() {
   // readNFC();
-  updateMatrix();
 }
 
 // RFID / NFC
@@ -50,9 +66,6 @@ void loop() {
 #ifndef _BV
 #define _BV(bit) (1 << (bit))
 #endif
-
-// hoi
-
 
 const uint8_t smile_bmp[] PROGMEM = { B00111100,
                                       B01000010,
@@ -84,66 +97,56 @@ const uint8_t frown_bmp[] PROGMEM = { B00111100,
 
 
 
-// Als het niet werkt:
+
 Adafruit_LEDBackpack matrix = Adafruit_LEDBackpack();
 
-uint8_t counter = 0;
 
 void setupMatrix() {
   Serial.begin(9600);
   matrix.begin(0x70);  // pass in the address
 }
 
-unsigned long currentTime;
-int bitmapIndex = 0;
-unsigned long lastBmpTime = 0;
-int msToWait = 1000;
 
 void updateMatrix() {
-  currentTime = millis();
+  // paint one LED per row. The HT16K33 internal memory looks like
+  // a 8x16 bit matrix (8 rows, 16 columns)
+  for (uint8_t i = 0; i < 8; i++) {
+    if (meatScore < 0.4f) matrix.displaybuffer[i] = frown_bmp[i];
+    else if (meatScore > 0.6f) matrix.displaybuffer[i] = smile_bmp[i];
+    else matrix.displaybuffer[i] = neutral_bmp[i];
+  }
 
-  if (currentTime - lastBmpTime > msToWait) {
-    lastBmpTime = currentTime;
-    // paint one LED per row. The HT16K33 internal memory looks like
-    // a 8x16 bit matrix (8 rows, 16 columns)
-    for (uint8_t i = 0; i < 8; i++) {
-      matrix.displaybuffer[i] = smile_bmp[i];
-    }
-    
-    // Apply shifting/orientation fixes
-    uint16_t displaybuffertemp[8];
-    memcpy(displaybuffertemp, matrix.displaybuffer, sizeof(displaybuffertemp));
+  // Apply shifting/orientation fixes
+  uint16_t displaybuffertemp[8];
+  memcpy(displaybuffertemp, matrix.displaybuffer, sizeof(displaybuffertemp));
 
-    // // Shift data to correct row
-    // for (uint8_t i = 0; i < 8; i++) {
-    //   uint8_t tempbuffer3 = displaybuffertemp[i] & 0xFF;
-    //   displaybuffertemp[i] &= 0xFF00;
-    //   displaybuffertemp[i] |= (tempbuffer3 << 1) | (tempbuffer3 >> 7);
-    // }
+  // // Shift data to correct row
+  // for (uint8_t i = 0; i < 8; i++) {
+  //   uint8_t tempbuffer3 = displaybuffertemp[i] & 0xFF;
+  //   displaybuffertemp[i] &= 0xFF00;
+  //   displaybuffertemp[i] |= (tempbuffer3 << 1) | (tempbuffer3 >> 7);
+  // }
 
-    // Shift data to correct row
-    uint16_t tempbuffer2 = displaybuffertemp[3];
-    displaybuffertemp[3] = displaybuffertemp[5];
-    displaybuffertemp[5] = tempbuffer2;
+  // Shift data to correct row
+  uint16_t tempbuffer2 = displaybuffertemp[3];
+  displaybuffertemp[3] = displaybuffertemp[5];
+  displaybuffertemp[5] = tempbuffer2;
 
-    // Mirror data
-    for (uint8_t i = 0; i < 8; i++) {
-      uint8_t tempbuffer = displaybuffertemp[i] & 0xFF;
-      displaybuffertemp[i] &= 0xFF00;
-      for (uint8_t k = 0; k < 8; k++) {
-        if (tempbuffer & (0x01 << k)) {
-          displaybuffertemp[i] |= 0x01 << (7 - k);
-        }
+  // Mirror data
+  for (uint8_t i = 0; i < 8; i++) {
+    uint8_t tempbuffer = displaybuffertemp[i] & 0xFF;
+    displaybuffertemp[i] &= 0xFF00;
+    for (uint8_t k = 0; k < 8; k++) {
+      if (tempbuffer & (0x01 << k)) {
+        displaybuffertemp[i] |= 0x01 << (7 - k);
       }
     }
-
-    memcpy(matrix.displaybuffer, displaybuffertemp, sizeof(displaybuffertemp));
-
-    // write the changes we just made to the display
-    matrix.writeDisplay();
-    counter++;
-    if (counter >= 16) counter = 0;  
   }
+
+  memcpy(matrix.displaybuffer, displaybuffertemp, sizeof(displaybuffertemp));
+
+  // write the changes we just made to the display
+  matrix.writeDisplay();
 }
 
 
@@ -259,9 +262,31 @@ const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 void showTextOnLcd(String textToDisplay) {
-  lcd.clear();
   lcd.begin(16, 2);
-  lcd.print(textToDisplay);
+  lcd.clear();
+
+  int textLength = textToDisplay.length();
+  int lcdLength = 16;
+  unsigned long previousMillis = 0;
+  int scrollIndex = 0;
+  while (scrollIndex <= textLength - lcdLength) {
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis >= 600) {
+      previousMillis = currentMillis;
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Hi, " + userName);
+      lcd.setCursor(0, 1);
+      lcd.print(textToDisplay.substring(scrollIndex, scrollIndex + lcdLength));
+      scrollIndex++;
+    }
+  }
+}
+
+void updateLcd() {
+  if (meatScore < 0.4f) showTextOnLcd("You've been eating a lot of meat, try to eat less!");
+  else if (meatScore > 0.6f) showTextOnLcd("You've been eating very sustainable, nice job!");
+  else showTextOnLcd("You've been eating okay, but there's room for improvement!");
 }
 
 void setupLcd() {
