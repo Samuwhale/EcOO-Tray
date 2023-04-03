@@ -44,7 +44,7 @@ void setup() {
   // setupNFC();
   delay(1000);
   setupLeds();
-  setupLcd();
+
   setupMatrix();
 
   setStreak(3);
@@ -289,7 +289,3 @@ void updateLcd() {
   else showTextOnLcd("You've been eating okay, but there's room for improvement!");
 }
 
-void setupLcd() {
-  lcd.begin(16, 2);
-  lcd.print("hello!");
-}
