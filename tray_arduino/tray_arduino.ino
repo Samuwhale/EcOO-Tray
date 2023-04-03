@@ -1,8 +1,5 @@
 #include <LiquidCrystal.h>
 
-
-
-
 #include <grove_two_rgb_led_matrix.h>
 #include <FastLED.h>
 
@@ -19,6 +16,16 @@
 #define SERIAL Serial
 #endif
 
+int streakAmount = 5;
+
+// Sets streak and updates LEDS accordingly
+void setStreak(int streak) {
+  streakAmount = streak;
+  updateLeds();
+}
+
+// meatscore gaat van  0 (slecht) - 1 (best)
+float meatScore = 0.5f; 
 
 void setup() {
 
@@ -140,17 +147,20 @@ CRGB leds[NUM_LEDS];
 void setupLeds() {
   FastLED.addLeds<LED_TYPE, LED_DATA_PIN, RGB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(LED_BRIGHTNESS);
-  fiveColorStrip();
+  updateLeds()
 }
 
-void fiveColorStrip() {
+void updateLeds() {
   int segmentSize = NUM_LEDS / 5;
   int currentColorIndex = 0;
-  for (int i = 0; i <= NUM_LEDS; i = i + 1) {
+  for (int i = 0; i < NUM_LEDS; i = i + 1) {
+    leds[i] = CRGB::Black;
     if (i % segmentSize == 0) {
       currentColorIndex++;
     }
-    switch (currentColorIndex) {
+
+    if (currentColorIndex <= streakAmount) {
+     switch (currentColorIndex) {
       case 1:
         leds[i] = CRGB::Red;
         break;
@@ -166,6 +176,7 @@ void fiveColorStrip() {
       case 5:
         leds[i] = CRGB::Green;
         break;
+      }
     }
   }
 
@@ -191,10 +202,10 @@ void fiveColorStrip() {
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-void showTextOnLcd(string) {
+void showTextOnLcd(string textToDisplay) {
       lcd.clear();
       lcd.begin(16, 2);
-      lcd.print(string);
+      lcd.print(textToDisplay);
 }
 
  void setupLcd() { 
