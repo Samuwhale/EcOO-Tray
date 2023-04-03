@@ -25,7 +25,7 @@ void setStreak(int streak) {
 }
 
 // meatscore gaat van  0 (slecht) - 1 (best)
-float meatScore = 0.5f; 
+float meatScore = 0.5f;
 
 void setup() {
 
@@ -48,47 +48,49 @@ void loop() {
 
 // LED MATRIX
 #ifndef _BV
-  #define _BV(bit) (1<<(bit))
+#define _BV(bit) (1 << (bit))
 #endif
 
 // hoi
 
 
-static const uint8_t PROGMEM smile_bmp[] =
-  { B00111100,
-  B01000010,
-  B10100101,
-  B10000001,
-  B10100101,
-  B10011001,
-  B01000010,
-  B00111100 },
-  neutral_bmp[] =
-  { B00111100,
-  B01000010,
-  B10100101,
-  B10000001,
-  B10111101,
-  B10000001,
-  B01000010,
-  B00111100 },
-  frown_bmp[] =
-  { B00111100,
-  B01000010,
-  B10100101,
-  B10000001,
-  B10011001,
-  B10100101,
-  B01000010,
-  B00111100 };
+const uint8_t smile_bmp[] PROGMEM = { B00111100,
+                                      B01000010,
+                                      B10100101,
+                                      B10000001,
+                                      B10100101,
+                                      B10011001,
+                                      B01000010,
+                                      B00111100 };
 
-// Als het niet werkt: 
+const uint8_t neutral_bmp[] PROGMEM = { B00111100,
+                                        B01000010,
+                                        B10100101,
+                                        B10000001,
+                                        B10111101,
+                                        B10000001,
+                                        B01000010,
+                                        B00111100 };
+
+const uint8_t frown_bmp[] PROGMEM = { B00111100,
+                                      B01000010,
+                                      B10100101,
+                                      B10000001,
+                                      B10011001,
+                                      B10100101,
+                                      B01000010,
+                                      B00111100 };
+
+
+
+
+// Als het niet werkt:
 Adafruit_LEDBackpack matrix = Adafruit_LEDBackpack();
 
 uint8_t counter = 0;
 
 void setupMatrix() {
-  Serial.begin(9600);  
+  Serial.begin(9600);
   matrix.begin(0x70);  // pass in the address
 }
 
@@ -97,23 +99,97 @@ int bitmapIndex = 0;
 unsigned long lastBmpTime = 0;
 int msToWait = 1000;
 
-void updateMatrix(){
+void updateMatrix() {
   currentTime = millis();
 
   if (currentTime - lastBmpTime > msToWait) {
     lastBmpTime = currentTime;
-  // paint one LED per row. The HT16K33 internal memory looks like
-  // a 8x16 bit matrix (8 rows, 16 columns)
-  for (uint8_t i=0; i<8; i++) {
-    // draw a diagonal row of pixels
-    matrix.displaybuffer[i] = _BV((counter+i) % 16) | _BV((counter+i+8) % 16)  ;
-  }
-  // write the changes we just made to the display
-  matrix.writeDisplay();
-  counter++;
-  if (counter >= 16) counter = 0;  }
+    // paint one LED per row. The HT16K33 internal memory looks like
+    // a 8x16 bit matrix (8 rows, 16 columns)
+    for (uint8_t i = 0; i < 8; i++) {
+      matrix.displaybuffer[i] = smile_bmp[i];
+    }
+    
+    // Apply shifting/orientation fixes
+    uint16_t displaybuffertemp[8];
+    memcpy(displaybuffertemp, matrix.displaybuffer, sizeof(displaybuffertemp));
 
+    // // Shift data to correct row
+    // for (uint8_t i = 0; i < 8; i++) {
+    //   uint8_t tempbuffer3 = displaybuffertemp[i] & 0xFF;
+    //   displaybuffertemp[i] &= 0xFF00;
+    //   displaybuffertemp[i] |= (tempbuffer3 << 1) | (tempbuffer3 >> 7);
+    // }
+
+    // Shift data to correct row
+    uint16_t tempbuffer2 = displaybuffertemp[3];
+    displaybuffertemp[3] = displaybuffertemp[5];
+    displaybuffertemp[5] = tempbuffer2;
+
+    // Mirror data
+    for (uint8_t i = 0; i < 8; i++) {
+      uint8_t tempbuffer = displaybuffertemp[i] & 0xFF;
+      displaybuffertemp[i] &= 0xFF00;
+      for (uint8_t k = 0; k < 8; k++) {
+        if (tempbuffer & (0x01 << k)) {
+          displaybuffertemp[i] |= 0x01 << (7 - k);
+        }
+      }
+    }
+
+    memcpy(matrix.displaybuffer, displaybuffertemp, sizeof(displaybuffertemp));
+
+    // write the changes we just made to the display
+    matrix.writeDisplay();
+    counter++;
+    if (counter >= 16) counter = 0;  
+  }
 }
+
+
+// Adafruit_8x8matrix matrix = Adafruit_8x8matrix();
+
+// const int colors[3] = { LED_GREEN, LED_YELLOW, LED_RED };
+
+// int count = 0;
+
+// void setupMatrix() {
+//   Serial.begin(9600);
+//   matrix.begin(0x70);  // pass in the address
+// }
+
+// unsigned long currentTime;
+// unsigned long lastBmpTime = 0;
+// int msToWait = 400;
+
+// void updateMatrix() {
+//   currentTime = millis();
+
+//   if (currentTime - lastBmpTime > msToWait) {
+//     lastBmpTime = currentTime;
+//     matrix.clear();
+
+//     for (int x = 0; x < 8; x++) {
+//       for (int y = 0; y < 8; y++) {
+//         matrix.clear();
+//         matrix.drawPixel(x, y, LED_ON);
+//         matrix.writeDisplay();
+//         delay(400);
+//       }
+//     }
+
+
+
+
+
+//     // matrix.writeDisplay();
+
+//     // matrix.drawBitmap(0, 0, smile_bmp, 8, 8, LED_ON);
+
+//     matrix.writeDisplay();
+//   }
+// }
+
 
 
 // LED STRIP
@@ -142,22 +218,22 @@ void updateLeds() {
     }
 
     if (currentColorIndex <= streakAmount) {
-     switch (currentColorIndex) {
-      case 1:
-        leds[i] = CRGB::Red;
-        break;
-      case 2:
-        leds[i] = CRGB::Blue;
-        break;
-      case 3:
-        leds[i] = CRGB::Yellow;
-        break;
-      case 4:
-        leds[i] = CRGB::Purple;
-        break;
-      case 5:
-        leds[i] = CRGB::Green;
-        break;
+      switch (currentColorIndex) {
+        case 1:
+          leds[i] = CRGB::Red;
+          break;
+        case 2:
+          leds[i] = CRGB::Blue;
+          break;
+        case 3:
+          leds[i] = CRGB::Yellow;
+          break;
+        case 4:
+          leds[i] = CRGB::Purple;
+          break;
+        case 5:
+          leds[i] = CRGB::Green;
+          break;
       }
     }
   }
@@ -183,13 +259,12 @@ const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 void showTextOnLcd(String textToDisplay) {
-      lcd.clear();
-      lcd.begin(16, 2);
-      lcd.print(textToDisplay);
+  lcd.clear();
+  lcd.begin(16, 2);
+  lcd.print(textToDisplay);
 }
 
- void setupLcd() { 
-   lcd.begin(16, 2);
-   lcd.print("hello!");
- }
-
+void setupLcd() {
+  lcd.begin(16, 2);
+  lcd.print("hello!");
+}
