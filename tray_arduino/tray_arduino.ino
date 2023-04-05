@@ -16,7 +16,15 @@
 #define SERIAL Serial
 #endif
 
-int streakAmount = 3;
+//interval at which random values are assigned
+const unsigned long INTERVAL = 5000; 
+
+// should be 0 - 5;
+int streakAmount = 5;
+
+// array of 10 'random' names
+String realNames[10] = {"Alice", "Bob", "Charlie", "Dave", "Eve", "Frank", "Grace", "Heidi", "Ivan", "Julia"};
+
 
 // Sets streak and updates LEDS accordingly
 void setStreak(int streak) {
@@ -24,8 +32,8 @@ void setStreak(int streak) {
   updateLeds();
 }
 
-// meatscore gaat van  0 (slecht) - 1 (best)
-float meatScore = 0.7f;
+// 0 = neutral, 1 = happy, 2 = mild-happy
+int meatScore = 1;
 
 String userName = "Tim";
 
@@ -34,64 +42,76 @@ void setUsername(String name) {
   updateLcd();
 }
 
-void setMeatscore(float score) {
+void setMeatscore(int score) {
   meatScore = score;
   updateMatrix();
   updateLcd();
 }
 
 void setup() {
-  // setupNFC();
   delay(1000);
   setupLeds();
 
   setupMatrix();
 
-  setStreak(3);
-  setMeatscore(0.3);
-  // updateLcd();
-  updateLeds();
+  setStreak(5);
+  setMeatscore(2);
 }
 
 void loop() {
-  // readNFC();
+ // randomizeValues();
 }
 
-// RFID / NFC
-// DOCS: https://how2electronics.com/interfacing-pn532-nfc-rfid-module-with-arduino/
-
-
+void randomizeValues() {
+  static unsigned long previousMillis = 0;
+  unsigned long currentMillis = millis();
+  
+  
+  if (currentMillis - previousMillis >= INTERVAL) {
+    previousMillis = currentMillis;
+    
+    // set random values
+    setStreak(random(6));
+    setUsername(realNames[random(10)]);
+    setMeatscore(random(3));
+  }
+}
 
 // LED MATRIX
 
 
 
-const uint8_t smile_bmp[] PROGMEM = { B00111100,
-                                      B01000010,
-                                      B10100101,
-                                      B10000001,
-                                      B10100101,
-                                      B10011001,
-                                      B01000010,
-                                      B00111100 };
+const uint8_t smile_bmp[] PROGMEM = { 
+B00000000,
+B01000010,
+B01000010,
+B00000000,
+B01111110,
+B01000010,
+B00111100,
+B00000000, };
 
-const uint8_t neutral_bmp[] PROGMEM = { B00111100,
-                                        B01000010,
-                                        B10100101,
-                                        B10000001,
-                                        B10111101,
-                                        B10000001,
-                                        B01000010,
-                                        B00111100 };
+const uint8_t mild_happy_bmp[] PROGMEM = { 
+B00000000,
+B01000010,
+B01000010,
+B00000000,
+B00000000,
+B01000010,
+B00111100,
+B00000000 };
 
-const uint8_t frown_bmp[] PROGMEM = { B00111100,
-                                      B01000010,
-                                      B10100101,
-                                      B10000001,
-                                      B10011001,
-                                      B10100101,
-                                      B01000010,
-                                      B00111100 };
+const uint8_t neutral_bmp[] PROGMEM = { 
+B00000000,
+B01000010,
+B01000010,
+B00000000,
+B00000000,
+B01111110,
+B00000000,
+B00000000 };
+
+
 
 
 
@@ -107,12 +127,13 @@ void setupMatrix() {
 
 
 void updateMatrix() {
-  // paint one LED per row. The HT16K33 internal memory looks like
-  // a 8x16 bit matrix (8 rows, 16 columns)
+  // paint one LED per row. 
+  // flips the smiley to have correct rotation through j.
   for (uint8_t i = 0; i < 8; i++) {
-    if (meatScore < 0.4f) matrix.displaybuffer[i] = frown_bmp[i];
-    else if (meatScore > 0.6f) matrix.displaybuffer[i] = smile_bmp[i];
-    else matrix.displaybuffer[i] = neutral_bmp[i];
+    uint8_t j = 7 - i;
+    if (meatScore == 0) matrix.displaybuffer[i] = neutral_bmp[j];
+    else if (meatScore == 1) matrix.displaybuffer[i] = smile_bmp[j];
+    else matrix.displaybuffer[i] = mild_happy_bmp[j];
   }
 
   // Apply shifting/orientation fixes
@@ -149,72 +170,30 @@ void updateMatrix() {
 }
 
 
-// Adafruit_8x8matrix matrix = Adafruit_8x8matrix();
-
-// const int colors[3] = { LED_GREEN, LED_YELLOW, LED_RED };
-
-// int count = 0;
-
-// void setupMatrix() {
-//   Serial.begin(9600);
-//   matrix.begin(0x70);  // pass in the address
-// }
-
-// unsigned long currentTime;
-// unsigned long lastBmpTime = 0;
-// int msToWait = 400;
-
-// void updateMatrix() {
-//   currentTime = millis();
-
-//   if (currentTime - lastBmpTime > msToWait) {
-//     lastBmpTime = currentTime;
-//     matrix.clear();
-
-//     for (int x = 0; x < 8; x++) {
-//       for (int y = 0; y < 8; y++) {
-//         matrix.clear();
-//         matrix.drawPixel(x, y, LED_ON);
-//         matrix.writeDisplay();
-//         delay(400);
-//       }
-//     }
-
-
-
-
-
-//     // matrix.writeDisplay();
-
-//     // matrix.drawBitmap(0, 0, smile_bmp, 8, 8, LED_ON);
-
-//     matrix.writeDisplay();
-//   }
-// }
-
-
-
 // LED STRIP
 // port 7
-#define NUM_LEDS 41
+#define NUM_LEDS 16
+#define LED_OFFSET 1
 #define LED_DATA_PIN 8
 #define LED_BRIGHTNESS 128
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
 
+
+// lights go from 2 - 16 
 CRGB leds[NUM_LEDS];
 
 void setupLeds() {
   FastLED.addLeds<LED_TYPE, LED_DATA_PIN, RGB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(LED_BRIGHTNESS);
-  updateLeds();
 }
 
 void updateLeds() {
   int segmentSize = NUM_LEDS / 5;
   int currentColorIndex = 0;
-  for (int i = 0; i < NUM_LEDS; i = i + 1) {
-    leds[i] = CRGB::Black;
+  for (int i; i <= NUM_LEDS; i = i + 1) {
+    int j = i + LED_OFFSET;
+    leds[j] = CRGB::Black;
     if (i % segmentSize == 0) {
       currentColorIndex++;
     }
@@ -222,19 +201,19 @@ void updateLeds() {
     if (currentColorIndex <= streakAmount) {
       switch (currentColorIndex) {
         case 1:
-          leds[i] = CRGB::Red;
+          leds[j] = CRGB::Red;
           break;
         case 2:
-          leds[i] = CRGB::Blue;
+          leds[j] = CRGB::Blue;
           break;
         case 3:
-          leds[i] = CRGB::Yellow;
+          leds[j] = CRGB::Yellow;
           break;
         case 4:
-          leds[i] = CRGB::Purple;
+          leds[j] = CRGB::Purple;
           break;
         case 5:
-          leds[i] = CRGB::Green;
+          leds[j] = CRGB::Green;
           break;
       }
     }
@@ -283,8 +262,8 @@ void showTextOnLcd(String textToDisplay) {
 }
 
 void updateLcd() {
-  if (meatScore < 0.4f) showTextOnLcd("You've been eating a lot of meat, try to eat less!");
-  else if (meatScore > 0.6f) showTextOnLcd("You've been eating very sustainable, nice job!");
+  if (meatScore == 0) showTextOnLcd("You've been eating a lot of meat, try to eat less!");
+  else if (meatScore == 1) showTextOnLcd("You've been eating very sustainable, nice job!");
   else showTextOnLcd("You've been eating okay, but there's room for improvement!");
 }
 
