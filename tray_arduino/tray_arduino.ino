@@ -19,7 +19,7 @@
 
 // array of 10 names to display randomly on startup, normally the username and data would be obtained from reading the NFC chip. This just simulates a random user.
 String realNames[10] = { "Alice", "Bob", "Charlie", "Dave", "Eve", "Frank", "Grace", "Heidi", "Ivan", "Julia" };
-String userName = realNames[(int)random(10)];
+String userName;
 
 static int streakAmount = 0; // the amount of days the user has eaten sustainable, yet again, this would normally be obtained from an actual user's NFC chip.
 static int meatScore = 0; // the sustainability of the meal the user is currently eating. This too would normally be set while checking out at the register.
@@ -66,7 +66,7 @@ void loop() {
 
 /* LED MATRIX */
 // The following section covers the functionality of the LED-matrix, in order to display smileys based on the sustainability (meatScore) of the current meal.
-
+// The LED matrix used: https://www.tinytronics.nl/shop/en/lighting/matrix/8x8-led-matrix-i2c-communication-red 
 
 const uint8_t smile_bmp[] PROGMEM = {
   B00000000,
@@ -128,13 +128,6 @@ void drawSmiley() {
   uint16_t displaybuffertemp[8];
   memcpy(displaybuffertemp, matrix.displaybuffer, sizeof(displaybuffertemp));
 
-  // // Shift data to correct row
-  // for (uint8_t i = 0; i < 8; i++) {
-  //   uint8_t tempbuffer3 = displaybuffertemp[i] & 0xFF;
-  //   displaybuffertemp[i] &= 0xFF00;
-  //   displaybuffertemp[i] |= (tempbuffer3 << 1) | (tempbuffer3 >> 7);
-  // }
-
   // Shift data to correct row
   uint16_t tempbuffer2 = displaybuffertemp[3];
   displaybuffertemp[3] = displaybuffertemp[5];
@@ -160,6 +153,7 @@ void drawSmiley() {
 
 /* LED Strip */
 // The following section covers the functionality of the LED-strip, in order to display the user's current streak.
+// The LED strip used was a regular WS2811 strip.
 
 #define LEDS_TO_LIGHT_UP 19
 #define FIRST_SEGMENT_START 2
@@ -216,8 +210,9 @@ void displayStreaks() {
 
 /* LCD Screen */
 // The following section covers the functionality of the LCD display, to display feedback to the user based on its current meal.
+// The LCD screen used was a HD44780-based character LCD display with an I2C LCD adapter. 
 
- 
+
 // The circuit:
 // LCD RS pin to digital pin 12
 // LCD Enable pin to digital pin 11
