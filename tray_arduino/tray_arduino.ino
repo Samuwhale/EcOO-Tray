@@ -17,99 +17,91 @@
 #endif
 
 //interval at which random values are assigned
-const unsigned long INTERVAL = 5000; 
+// const unsigned long INTERVAL = 500;
 
-// should be 0 - 5;
-int streakAmount = 5;
+
 
 // array of 10 'random' names
-String realNames[10] = {"Alice", "Bob", "Charlie", "Dave", "Eve", "Frank", "Grace", "Heidi", "Ivan", "Julia"};
+String realNames[10] = { "Alice", "Bob", "Charlie", "Dave", "Eve", "Frank", "Grace", "Heidi", "Ivan", "Julia" };
 
+static int streakAmount = 5;
+static int meatScore = 1;
 
-// Sets streak and updates LEDS accordingly
-void setStreak(int streak) {
-  streakAmount = streak;
-  updateLeds();
-}
+String userName = realNames[(int)random(10)];
 
-// 0 = neutral, 1 = happy, 2 = mild-happy
-int meatScore = 1;
-
-String userName = "Tim";
-
-void setUsername(String name) {
-  userName = name;
-  updateLcd();
-}
-
-void setMeatscore(int score) {
-  meatScore = score;
-  updateMatrix();
-  updateLcd();
-}
 
 void setup() {
-  delay(1000);
+ userName = realNames[(int)random(10)];
+
+  delay(2000);
   setupLeds();
 
   setupMatrix();
 
-  setStreak(5);
-  setMeatscore(2);
+  updateMatrix();
+  updateLcd();
+  updateLeds();
 }
 
 void loop() {
- // randomizeValues();
+  //  randomizeValues();
 }
 
-void randomizeValues() {
-  static unsigned long previousMillis = 0;
-  unsigned long currentMillis = millis();
-  
-  
-  if (currentMillis - previousMillis >= INTERVAL) {
-    previousMillis = currentMillis;
-    
-    // set random values
-    setStreak(random(6));
-    setUsername(realNames[random(10)]);
-    setMeatscore(random(3));
-  }
-}
+// unsigned long randomizeTimer = millis();
+
+// void randomizeValues() {
+//   unsigned long currentTime = millis();
+//   if (currentTime - randomizeTimer >= INTERVAL) {
+//     randomizeTimer = currentTime;
+//     setupLeds();
+//     setupMatrix();
+
+//     // set random values
+//     setStreak((int)random(6));
+//     setUsername(realNames[(int)random(10)]);
+//     setMeatscore((int)random(3));
+//     Serial.write("Setting Random");
+//     Serial.println();
+
+//   }
+// }
 
 // LED MATRIX
 
 
 
-const uint8_t smile_bmp[] PROGMEM = { 
-B00000000,
-B01000010,
-B01000010,
-B00000000,
-B01111110,
-B01000010,
-B00111100,
-B00000000, };
+const uint8_t smile_bmp[] PROGMEM = {
+  B00000000,
+  B01000010,
+  B01000010,
+  B00000000,
+  B01111110,
+  B01000010,
+  B00111100,
+  B00000000,
+};
 
-const uint8_t mild_happy_bmp[] PROGMEM = { 
-B00000000,
-B01000010,
-B01000010,
-B00000000,
-B00000000,
-B01000010,
-B00111100,
-B00000000 };
+const uint8_t mild_happy_bmp[] PROGMEM = {
+  B00000000,
+  B01000010,
+  B01000010,
+  B00000000,
+  B00000000,
+  B01000010,
+  B00111100,
+  B00000000
+};
 
-const uint8_t neutral_bmp[] PROGMEM = { 
-B00000000,
-B01000010,
-B01000010,
-B00000000,
-B00000000,
-B01111110,
-B00000000,
-B00000000 };
+const uint8_t neutral_bmp[] PROGMEM = {
+  B00000000,
+  B01000010,
+  B01000010,
+  B00000000,
+  B00000000,
+  B01111110,
+  B00000000,
+  B00000000
+};
 
 
 
@@ -127,7 +119,9 @@ void setupMatrix() {
 
 
 void updateMatrix() {
-  // paint one LED per row. 
+  matrix.clear();
+
+  // paint one LED per row.
   // flips the smiley to have correct rotation through j.
   for (uint8_t i = 0; i < 8; i++) {
     uint8_t j = 7 - i;
@@ -152,7 +146,7 @@ void updateMatrix() {
   displaybuffertemp[3] = displaybuffertemp[5];
   displaybuffertemp[5] = tempbuffer2;
 
-  // Mirror data
+  // Mirror data\
   for (uint8_t i = 0; i < 8; i++) {
     uint8_t tempbuffer = displaybuffertemp[i] & 0xFF;
     displaybuffertemp[i] &= 0xFF00;
@@ -172,34 +166,36 @@ void updateMatrix() {
 
 // LED STRIP
 // port 7
-#define NUM_LEDS 16
-#define LED_OFFSET 1
+#define LEDS_TO_LIGHT_UP 19
+#define FIRST_SEGMENT_START 2
 #define LED_DATA_PIN 8
-#define LED_BRIGHTNESS 128
+#define LED_BRIGHTNESS 200
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
 
 
-// lights go from 2 - 16 
-CRGB leds[NUM_LEDS];
+// lights go from 2 - 16
+CRGB leds[LEDS_TO_LIGHT_UP + FIRST_SEGMENT_START];
 
 void setupLeds() {
-  FastLED.addLeds<LED_TYPE, LED_DATA_PIN, RGB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<LED_TYPE, LED_DATA_PIN, RGB>(leds, LEDS_TO_LIGHT_UP + FIRST_SEGMENT_START).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(LED_BRIGHTNESS);
 }
 
 void updateLeds() {
-  int segmentSize = NUM_LEDS / 5;
-  int currentColorIndex = 0;
-  for (int i; i <= NUM_LEDS; i = i + 1) {
-    int j = i + LED_OFFSET;
+
+
+  int segmentSize = ceil(static_cast<double>(LEDS_TO_LIGHT_UP) / 5);
+  int currentSegment = 0;
+  for (int i; i <= LEDS_TO_LIGHT_UP; i = i + 1) {
+    int j = i + FIRST_SEGMENT_START;
     leds[j] = CRGB::Black;
     if (i % segmentSize == 0) {
-      currentColorIndex++;
+      currentSegment++;
     }
 
-    if (currentColorIndex <= streakAmount) {
-      switch (currentColorIndex) {
+    if (currentSegment <= streakAmount) {
+      switch (currentSegment) {
         case 1:
           leds[j] = CRGB::Red;
           break;
@@ -222,6 +218,46 @@ void updateLeds() {
   FastLED.show();
 }
 
+// void updateLeds() {
+//   // calculate the current segment based on the streak amount
+//   int currentSegment = streakAmount / (TOTAL_LED_AMOUNT - FIRST_SEGMENT_START + 1);
+
+//   // loop through each LED
+//   for (int i = 0; i < TOTAL_LED_AMOUNT; i++) {
+//     // calculate the current segment based on the LED index
+//     int segment = (i - FIRST_SEGMENT_START) / ((TOTAL_LED_AMOUNT - FIRST_SEGMENT_START + 1) / 5);
+
+//     // check if this LED should be lit based on the current segment
+//     if (segment < currentSegment) {
+//       // set the LED color based on the segment
+//       switch (segment) {
+//         case 0:
+//           leds[i] = CRGB::Red;
+//           break;
+//         case 1:
+//           leds[i] = CRGB::Blue;
+//           break;
+//         case 2:
+//           leds[i] = CRGB::Yellow;
+//           break;
+//         case 3:
+//           leds[i] = CRGB::Purple;
+//           break;
+//         case 4:
+//           leds[i] = CRGB::Green;
+//           break;
+//       }
+//     } else {
+//       // turn off the LED
+//       leds[i] = CRGB::Black;
+//     }
+//   }
+
+//   // update the LEDs
+//   FastLED.show();
+// }
+
+
 // LCD scherm
 /* 
  * The circuit:
@@ -239,18 +275,19 @@ void updateLeds() {
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
+unsigned long lcdTimer = 0;
 void showTextOnLcd(String textToDisplay) {
   lcd.begin(16, 2);
   lcd.clear();
 
   int textLength = textToDisplay.length();
   int lcdLength = 16;
-  unsigned long previousMillis = 0;
+
   int scrollIndex = 0;
   while (scrollIndex <= textLength - lcdLength) {
     unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis >= 600) {
-      previousMillis = currentMillis;
+    if (currentMillis - lcdTimer >= 600) {
+      lcdTimer = currentMillis;
       lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("Hi, " + userName);
@@ -266,4 +303,3 @@ void updateLcd() {
   else if (meatScore == 1) showTextOnLcd("You've been eating very sustainable, nice job!");
   else showTextOnLcd("You've been eating okay, but there's room for improvement!");
 }
-
